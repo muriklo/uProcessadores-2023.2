@@ -39,13 +39,13 @@ div $t0, $t5, $t6		# f = (h * h + 2) / f - g
 # B[i] = 2 * A[i] 
 
 sll $t6, $t3, 2			# i * 4
-la $t5, A			
-add $t5, $t5, $t6		# endereço + 4 para acessar A[1]
-lw $t5, 0($t5)			# $t5 = A[1]
-sll $t5, $t5, 1			# 2 * A[1]
+la $s0, A           # endereço base de A			
+add $t5, $t5, $t6		# endereço + 4 para acessar A[i]
+lw $t5, 0($t5)			# $t5 = A[i]
+sll $t5, $t5, 1			# 2 * A[i]
 la $t7, B			      # carrega endereço base de B
-add $t6, $t6, $t7		# endereço + 4 para acessar B[1]
-sw $t5, 0($t6)			# B[1] = 2 * A[1]
+add $t6, $t6, $t7		# endereço + 4 para acessar B[i]
+sw $t5, 0($t6)			# B[i] = 2 * A[i]
 
 ######################################
 # B[f+g] = A[i] / (A[j] - B[j])
@@ -55,23 +55,22 @@ sll $t5, $t5, 2			# 4 * (f + g)
 sll $t6, $t3, 2			# i * 4
 sll $t7, $t4, 2			# j * 4
 
-la $t8, A			      # endereço base de A
-add $t9, $t8, $t7		# endereço + 4 * j para acessar A[j]
+la $s0, A			      # endereço base de A
+add $t9, $s0, $t7		# endereço + 4 * j para acessar A[j]
 lw $t8, 0($t9)			# $t8 = A[j]
 
-la $t9, B			      # endereço base de B
-add $t9, $t9, $t7		# endereço + 4 * j para acessar B[j]
+la $s1, B			      # endereço base de B
+add $t9, $s1, $t7		# endereço + 4 * j para acessar B[j]
 lw $t9, 0($t9)			# $t9 = B[j]
 
 sub $t9, $t8, $t9		# A[j] - B[j]
 
-la $t8, A
-add $t8, $t8, $t6		# endereço + 4 * i para acessar A[i]
+add $t8, $s0, $t6		# endereço + 4 * i para acessar A[i]
 lw $t8, 0($t8)			# $t8 = A[i]
 
 div $t8, $t8, $t9		# A[i] / A[j] - B[j]
 mflo $t8			      # $t8 = A[i] / A[j] - B[j]
 
-la $t6, B			      # endereço base de B
-add $t6, $t6, $t5		# endereço + 4 * (f + g) para acessar B[f + g]
+la $s1, B			      # endereço base de B
+add $t6, $s1, $t5		# endereço + 4 * (f + g) para acessar B[f + g]
 sw $t8, 0($t6)			# B[f + g] = A[i] / A[j] - B[j]
