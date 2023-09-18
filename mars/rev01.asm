@@ -32,15 +32,15 @@ sub $t0, $t0, $t5		  # f = ((g + 1) * h) - 3
 
 mul $t5, $t2, $t2		# h * h
 addi $t5, $t5, 2		# h * h + 2
-sub $t6, $t0, $t1		# f - g
-div $t0, $t5, $t6		# f = (h * h + 2) / f - g
+div $t0, $t5, $t0		# f = (h * h + 2) / f
+sub $t6, $t0, $t1		# f = (h * h + 2) / f - g
 
 ######################################
 # B[i] = 2 * A[i] 
 
 sll $t6, $t3, 2			# i * 4
 la $s0, A           # endereço base de A			
-add $t5, $t5, $t6		# endereço + 4 para acessar A[i]
+add $t5, $s0, $t6		# endereço + 4 para acessar A[i]
 lw $t5, 0($t5)			# $t5 = A[i]
 sll $t5, $t5, 1			# 2 * A[i]
 la $t7, B			      # carrega endereço base de B
