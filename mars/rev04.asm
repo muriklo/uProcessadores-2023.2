@@ -22,7 +22,7 @@
 .end_macro
 
 .macro imprimirInt (%reg)
-    li $v0, 1       		# carrega o código do serviço de sistema para imprimir uma string em $v0
+    li $v0, 1       		# carrega o código do serviço de sistema para imprimir uma string em $v0, 35 para imprimir em binário
     add $a0, $zero, %reg    	# carrega string ao registrador $a0
     syscall            		# chama o serviço de sistema para imprimir a string
 .end_macro
