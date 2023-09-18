@@ -58,7 +58,8 @@ pula_incremento:
 end:
 	imprimirString("\nResultado da paridade: ")
 	imprimirInt($t0)
-	rem $t0, $t0, 2
+	div $t0, $t0, 2
+	mfhi $t0
 	bnez $t0, impar
 	li $t1, 0x01
 	lw $t1, 4($gp)
