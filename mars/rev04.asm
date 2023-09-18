@@ -56,14 +56,16 @@ pula_incremento:
 	beqz $s0, end		# se a palavra foi igual a zero, encerra o programa
 	j loop			# retorna para o loop
 end:
+	imprimirString("\nResultado da paridade: ")
+	imprimirInt($t0)
 	rem $t0, $t0, 2
 	bnez $t0, impar
 	li $t1, 0x01
 	lw $t1, 4($gp)
-	imprimirString("A paridade de bits ativos é par")
+	imprimirString("\n\nA paridade de bits ativos é par\n\n")
 	j encerra
 impar:
 	li $t1, 0x02
 	lw $t1, 4($gp)
-	imprimirString("A paridade de bits ativos é ímpar")
+	imprimirString("\n\nA paridade de bits ativos é ímpar\n\n")
 encerra:
