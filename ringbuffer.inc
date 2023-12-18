@@ -35,9 +35,15 @@ rb_init:
 #	}
 # }
 rb_empty:
+	lw $t0, 0($a0)	# Carrega rbuf->size em $t0
+    	beqz $t0, if_empty 	# rbuf->size == 0
+    	li $v0, 0       # return 0
+    	jr $ra          
 
-	jr   $ra
-
+if_empty:
+	li $v0, 1	# return 1
+	jr $ra
+	
 # bool rb_full(t_ringbuffer * rbuf){
 #	if (rbuf->size == MAX_SIZE)
 #		return 1;
@@ -45,8 +51,15 @@ rb_empty:
 #		return 0;
 # } 
 rb_full:
+	lw $t0, 0($a0)     	# Carrega rbuf->size em $t0
+	li $t1, RB_MAX_SIZE
+    	bne $t0, $t1, else_full # rbuf->size == MAX_SIZE
+    	li $v0, 1          	# return 1
+    	jr $ra             
 
-	jr   $ra
+else_full:
+	li $v0, 0		# return 0
+	jr $ra
 	
 #char rb_read(t_ringbuffer * rbuf){
 #	char tmp = 0;
@@ -58,8 +71,35 @@ rb_full:
 #	return tmp;
 #}
 rb_read:
+	addiu $sp, $sp, -16
+	sw    $ra, 8($sp)
+	
+	li   $t0, 0
+	sw   $t0, 12($sp)
+	
+	jal rb_empty
+	lw   $t0, 12($sp)
+	bnez $v0, exit_read	# Se size for diferente de zero, pule para exit
+	
+	lw   $t1, 0($a0)
+	addi $t1, $t1, -1
+	sw   $t1, 0($a0)
+	
+	lw   $t1, 4($a0)
+	add  $t2, $t1, $a0
+	lb   $t0, 12($t2)
 
-	jr $ra
+	addi $t1, $t1, 1
+	li   $t3, RB_MAX_SIZE
+	div  $t1, $t3
+	mfhi $t1
+	sw   $t1, 4($a0)
+
+exit_read:
+	move  $v0, $t0
+	lw    $ra, 8($sp)
+	addiu $sp, $sp, 16
+	jr    $ra             
 
 # bool rb_write(t_ringbuffer * rbuf, char byte){
 #	if(!rbuf_full(rbuf)){
@@ -71,5 +111,31 @@ rb_read:
 #	return 0;
 # }
 rb_write:
-
+	addiu $sp, $sp, -8
+	sw    $ra, 4($sp)
+	
+	jal rb_full
+	li $t0, 0
+	bnez $v0, exit_write
+	
+	lw $t1, 0($a0)
+	addi $t1, $t1, 1
+	sw $t1, 0($a0)
+	
+	lw $t1, 8($a0)
+	add $t2, $t1, $a0
+	sb $a1, 12($t2)
+	
+	addi $t1, $t1, 1
+	li $t3, 16
+	div $t1, $t3
+	mfhi $t1
+	sw $t1, 8($a0)
+	
+	li $t0, 1
+	
+exit_write:
+	move $v0, $t0
+	lw $ra 4($sp)
+	addiu $sp, $sp, 8
 	jr $ra

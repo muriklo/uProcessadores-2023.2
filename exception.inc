@@ -1,6 +1,6 @@
 .kdata
 _kexception_msg:	.word  _e0, _eu, _eu, _eu, _e4,  _e5,  _e6,  _e7
-					.word  _e8,  _e9,  _e10,  _eu,  _e12,  _e13,  _eu,  _e15
+			.word  _e8,  _e9,  _e10,  _eu,  _e12,  _e13,  _eu,  _e15
               
 _eu: .asciiz	"Exception Unknow \n"
 _e0: .asciiz	"Hardware Interrupt \n"
@@ -76,28 +76,35 @@ exception_kernel_panic:
 	
 exception_handler_SoftException:
 	mfc0  	$t0, $14      # $k0 = EPC 
-    addiu 	$t0, $t0, 4   # Increment $k0 by 4 
-    mtc0  	$t0, $14      # EPC = point to next instruction
-    j		exception_handler_Done 
+    	addiu 	$t0, $t0, 4   # Increment $k0 by 4 
+   	mtc0  	$t0, $14      # EPC = point to next instruction
+    	j	exception_handler_Done 
 
 exception_handler_Hardware:
 	# Chama getchar para ler tecla digitada e escreve
 	# no ringbuffer do teclado
 	# IMP
+	la   $t8, getchar
+	jalr $t8
+	la   $a0, key_rb
 	
+	move $a1, $v0
+	
+	la   $t9, rb_write
+	jalr $t9
+
 exception_handler_Done:
 
 	# Clear Cause register
 	mtc0		$0, $13	
 		
-	lw    $k1, 0($k0)
+	lw    $at, 0($k0)
 	lw    $v0, 4($k0)
 	lw    $v1, 8($k0)
 	lw    $a0, 12($k0)
 	lw    $a1, 16($k0)
 	lw    $a2, 20($k0)
 	lw    $a3, 24($k0)
-	lw    $t0, 28($k0)
 	lw    $t1, 32($k0)
 	lw    $t2, 36($k0)
 	lw    $t3, 40($k0)
@@ -123,7 +130,7 @@ exception_handler_Done:
 	mthi  $t0
 	lw    $t0, 120($k0) 
 	mtlo  $t0
-
+	lw    $t0, 28($k0)
 	addi  $k0, $k0, 124
 
 	eret

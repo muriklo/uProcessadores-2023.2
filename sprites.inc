@@ -17,48 +17,63 @@
 #       }
 # }
 ## IMP
-draw_sprite:
-    # Argumentos: $a0 = X, $a1 = Y, $a2 = sprite_id
+draw_sprite: # void draw_sprite(X, Y, sprite_id) ($a0, $a1, $a2)
+	addiu $sp, $sp, -40
+	sw $s0, 12($sp)
+	sw $s1, 16($sp)
+	sw $s2, 20($sp)
+	sw $s3, 24($sp)
+	sw $s4, 28($sp)
+# <empty space> 32($sp)
+	sw $ra, 36($sp)
+	
+	move $s0, $a0
+	move $s1, $a1
+	
+	la $s2, colors	
+	la $s3, sprites
+	la $t1, 49
+	
+	mul $t1, $a2, $t1
+	add $s3, $s3, $t1  # $s0 -> * ptr_sprite
+	
+	li $s4, 0 # int i = 0
+	
+FOR_draw_sprite:	
+	bge $s4, 49, end_FOR_draw_sprite # i >= 49 ? end
+	lb  $t2, 0($s3)
+	
+	sll $t2, $t2, 2		
+	add $t2, $t2, $s2	# t1 -> *colors[*ptr_sprite]; 
+	lw  $a2, 0($t2)		# $a2 -> color = colors[*ptr_sprite];
+	
+	li  $t3, 7
+	div $s4, $t3	
+		
+	mfhi $t4		# sX -> i % 7
+	mflo $t5		# sY -> i / 7
+	add $a0, $s0, $t4	# sX -> X + sX
+	add $a1, $s1, $t5	# sY -> Y + sY
+	
+	jal set_pixel
+		
+	addiu $s3, $s3, 1	# * ptr_sprite++
+	addiu $s4, $s4, 1	# i++
+	j FOR_draw_sprite
 
-    # Carregar o endereço do sprite na memória
-    la   $t0, sprites
-    sll  $t1, $a2, 2         # sprite_id * 4 (cada sprite é um word)
-    add  $t0, $t0, $t1       # $t0 contém o endereço do sprite
+end_FOR_draw_sprite:
+	
+	lw $s0, 12($sp)
+	lw $s1, 16($sp)
+	lw $s2, 20($sp)
+	lw $s3, 24($sp)
+	lw $s4, 28($sp)
+# <empty space> 32($sp)
+	lw $ra, 36($sp)
+	addiu $sp, $sp, 40
+	
+	jr   $ra
 
-    # Inicializar o loop
-    li   $t2, 0              # $t2 contém o índice do loop
-
-    sprite_loop:
-        # Carregar o byte atual do sprite
-        lb   $t3, 0($t0)
-
-        # Calcular a posição X e Y no sprite
-        li   $t4, 7              # $t4 = largura do sprite (7 colunas)
-        remu $t5, $t2, $t4       # $t5 = índice % largura
-        divu $t6, $t2, $t4       # $t6 = índice / largura
-        mflo $t2                 # Atualizar o índice do loop
-
-        # Calcular a posição absoluta na tela
-        add  $t5, $t5, $a0       # $t5 = X + (índice % largura)
-        add  $t6, $t6, $a1       # $t6 = Y + (índice / largura)
-
-        # Calcular a cor correspondente do array colors
-        lw   $t7, colors($t3)
-
-        # Chamar a função set_pixel(X, Y, color)
-        jal  set_pixel
-
-        # Atualizar o ponteiro do sprite para o próximo byte
-        addi $t0, $t0, 1
-
-        # Incrementar o índice do loop
-        addi $t2, $t2, 1
-
-        # Verificar se o loop deve continuar
-        blt  $t2, SPRITE_SIZE, sprite_loop
-
-    # Retornar
-    jr   $ra
 #=============================================================
 
 #=============================================================
@@ -67,24 +82,33 @@ draw_sprite:
 draw_animated_sprite:
 	# Chama draw_sprite com a posiÃ§Ã£o contida na estrutura
 	# animated_sprite
-	
+	addiu $sp, $sp, -4
+	sw $ra, 0($sp)
 
-	jr    $ra
+	move $t0, $a0
+	lw $a0, 4($t0)
+	lw $a1, 8($t0)
+	lw $a2, 0($t0)
+	jal draw_sprite
+	
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 4
+	
+	jr  $ra
 #=============================================================
 
 #=============================================================
 # void apply_movement(animated_sprite*)
 apply_movement:
-	lw 	 $t0, 4($a0)
+	lw   $t0, 4($a0)
 	lw   $t1, 12($a0)
 	add  $t0, $t0, $t1
 	sw   $t0, 4($a0)
 	
-	lw 	 $t0, 8($a0)
+	lw   $t0, 8($a0)
 	lw   $t1, 16($a0)
 	add  $t0, $t0, $t1
 	sw   $t0, 8($a0)
-	
 	jr    $ra
 #=============================================================
 
@@ -125,8 +149,8 @@ draw_grid:
 	## Pegar o id_do_sprite (get_grid_element)
 	## converter de ASCII para ID (-64)
 	## Chamar draw_sprite(grid pos -> pixel pos - multiplica {X|Y}_SCALE)
-	addiu $sp, $sp, -40
 	
+	addiu $sp, $sp, -40
 	sw    $s4, 28($sp)
 	sw    $s3, 24($sp)
 	sw    $s2, 20($sp)
@@ -196,8 +220,55 @@ process_input:
 	## Processa valor com teclas associadas ao
 	## movimento. Setar mov_vector e tornar
 	## vÃ¡lido	
+	addiu $sp, $sp, -16
+	sw $s0, 4($sp)
+	sw $ra, 8($sp)
+	move $s0, $a0
 	
-			
+	la $a0, key_rb
+	jal rb_empty
+	
+	li $t0, 1
+	beq $v0, $t0, empty_process_input
+	jal rb_read
+	
+	li $t2, 'w'
+	li $t3, 'a'
+	li $t4, 's'
+	li $t5, 'd'
+	bne $v0, $t2, skip_w_process_input
+	li $t0, -1 # W = cima (-1, 0)
+	li $t1, 0			
+	j move_vec
+
+skip_w_process_input:
+	bne $v0, $t3, skip_a_process_input
+	li $t0, 0 # A = esquerda (0, -1)
+	li $t1, -1			
+	j move_vec
+	
+skip_a_process_input:	
+	bne $v0, $t4, skip_s_process_input
+	li $t0, 1 # S = baixo (1, 0)
+	li $t1, 0			
+	j move_vec
+	
+skip_s_process_input:	
+	bne $v0, $t5, empty_process_input
+	li $t0, 0 # D = direita (0, 1)
+	li $t1, 1			
+	j move_vec
+	
+move_vec:
+	sw $t0, 4($s0)
+	sw $t1, 8($s0)
+	li $t0, 1
+	sw $t0, 0($s0)
+
+empty_process_input:
+	lw $s0, 4($sp)
+	lw $ra, 8($sp)
+	addiu $sp, $sp, 16
 	jr   $ra
 #=============================================================
 
